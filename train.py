@@ -1,87 +1,37 @@
 from __future__ import annotations
-from core.config import TRAIN_START_DATE, TRAIN_END_DATE, INDICATORS, ERL_PARAMS
-from core.config_tickers import DOW_30_TICKER
-from core.meta.data_processor import DataProcessor
+
 from core.agents.stablebaselines3.models import DRLAgent as DRLAgent_sb3
-
-
-def train(
-    start_date,
-    end_date,
-    ticker_list,
-    data_source,
-    time_interval,
-    technical_indicator_list,
-    drl_lib,
-    env,
-    model_name,
-    if_vix=True,
-    **kwargs,
-):
-    # download data
-    dp = DataProcessor(data_source, **kwargs)
-    data = dp.download_data(ticker_list, start_date, end_date, time_interval)
-    data = dp.clean_data(data)
-    data = dp.add_technical_indicator(data, technical_indicator_list)
-    
-    if if_vix:
-        data = dp.add_vix(data)
-    
-    price_array, tech_array, turbulence_array = dp.df_to_array(data, if_vix)
-    
-    env_config = {
-        "price_array": price_array,
-        "tech_array": tech_array,
-        "turbulence_array": turbulence_array,
-        "if_train": True,
-    }
-
-
-    env_instance = env(config=env_config)
-
-    # read parameters
-    cwd = kwargs.get("cwd", "./" + str(model_name))
-
-   
-    total_timesteps = kwargs.get("total_timesteps", 1e6)
-    agent_params = kwargs.get("agent_params")
-
-    agent = DRLAgent_sb3(env=env_instance)
-    
-    model = agent.get_model(model_name, model_kwargs=agent_params)
-    
-    trained_model = agent.train_model(
-            model=model, tb_log_name=model_name, total_timesteps=total_timesteps
-        )
-
-    print("Training is finished!")
-    
-    trained_model.save(cwd)
-    
-    print("Trained model is saved in " + str(cwd))
- 
-
-
+from core.data_process.process import DataProcess
+from env.CryptoEnv.env_multiple_crypto import CryptoEnv
 
 if __name__ == "__main__":
-    env = StockTradingEnv
+    technical_indicator_list = ['macd', 'rsi', 'cci', 'dx']
+    path = 'D:\\Lab\\quant\\code\\finbot\\data\\btcusd_2022-01-02_to_2022-07-03.csv'
+    process = DataProcess(path, 'BTCUSDT', technical_indicator_list)
+    price_array, tech_array = process.run()
+    data_config = {
+        'price_array': price_array,
+        'tech_array': tech_array
+    }
 
-    # demo for elegantrl
-    kwargs = (
-        {}
-    )  # in current meta, with respect yahoofinance, kwargs is {}. For other data sources, such as joinquant, kwargs is not empty
-    train(
-        start_date=TRAIN_START_DATE,
-        end_date=TRAIN_END_DATE,
-        ticker_list=DOW_30_TICKER,
-        data_source="yahoofinance",
-        time_interval="1D",
-        technical_indicator_list=INDICATORS,
-        drl_lib="elegantrl",
-        env=env,
-        model_name="ppo",
-        cwd="./test_ppo",
-        erl_params=ERL_PARAMS,
-        break_step=1e5,
-        kwargs=kwargs,
-    )
+    # build environment using processed data
+    env = CryptoEnv(config=data_config)
+    total_timesteps = 10000000
+    model_name = 'ppo'
+    agent_params = {
+        "n_steps": 2048,
+        "ent_coef": 0.01,
+        "learning_rate": 0.00025,
+        "batch_size": 64,
+    }
+    current_working_dir = './test_ppo'
+    agent = DRLAgent_sb3(env=env)
+
+    model = agent.get_model(model_name, model_kwargs=agent_params, tensorboard_log='./tensorboard_log')
+    trained_model = agent.train_model(model=model,
+                                      tb_log_name=model_name,
+                                      total_timesteps=total_timesteps)
+
+    print('Training finished!')
+    trained_model.save(current_working_dir)
+    print('Trained model saved in ' + str(current_working_dir))

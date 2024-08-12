@@ -15,10 +15,10 @@ from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-from core.meta.env_stock_trading.env_stocktrading import StockTradingEnv
 
 from core import config
 from core.meta.preprocessor.preprocessors import data_split
+from env.CryptoEnv.env_multiple_crypto import CryptoEnv
 
 MODELS = {"a2c": A2C, "ddpg": DDPG, "td3": TD3, "sac": SAC, "ppo": PPO}
 
@@ -314,25 +314,9 @@ class DRLEnsembleAgent:
         )
         trade_env = DummyVecEnv(
             [
-                lambda: StockTradingEnv(
-                    df=trade_data,
-                    stock_dim=self.stock_dim,
-                    hmax=self.hmax,
-                    initial_amount=self.initial_amount,
-                    num_stock_shares=[0] * self.stock_dim,
+                lambda: CryptoEnv(
                     buy_cost_pct=[self.buy_cost_pct] * self.stock_dim,
                     sell_cost_pct=[self.sell_cost_pct] * self.stock_dim,
-                    reward_scaling=self.reward_scaling,
-                    state_space=self.state_space,
-                    action_space=self.action_space,
-                    tech_indicator_list=self.tech_indicator_list,
-                    turbulence_threshold=turbulence_threshold,
-                    initial=initial,
-                    previous_state=last_state,
-                    model_name=name,
-                    mode="trade",
-                    iteration=iter_num,
-                    print_verbosity=self.print_verbosity,
                 )
             ]
         )
@@ -387,23 +371,10 @@ class DRLEnsembleAgent:
         )
         val_env = DummyVecEnv(
             [
-                lambda: StockTradingEnv(
-                    df=validation,
-                    stock_dim=self.stock_dim,
-                    hmax=self.hmax,
-                    initial_amount=self.initial_amount,
-                    num_stock_shares=[0] * self.stock_dim,
+                lambda: CryptoEnv(
+
                     buy_cost_pct=[self.buy_cost_pct] * self.stock_dim,
                     sell_cost_pct=[self.sell_cost_pct] * self.stock_dim,
-                    reward_scaling=self.reward_scaling,
-                    state_space=self.state_space,
-                    action_space=self.action_space,
-                    tech_indicator_list=self.tech_indicator_list,
-                    turbulence_threshold=turbulence_threshold,
-                    iteration=i,
-                    model_name=model_name,
-                    mode="validation",
-                    print_verbosity=self.print_verbosity,
                 )
             ]
         )
@@ -535,19 +506,9 @@ class DRLEnsembleAgent:
             )
             self.train_env = DummyVecEnv(
                 [
-                    lambda: StockTradingEnv(
-                        df=train,
-                        stock_dim=self.stock_dim,
-                        hmax=self.hmax,
-                        initial_amount=self.initial_amount,
-                        num_stock_shares=[0] * self.stock_dim,
+                    lambda: CryptoEnv(
                         buy_cost_pct=[self.buy_cost_pct] * self.stock_dim,
                         sell_cost_pct=[self.sell_cost_pct] * self.stock_dim,
-                        reward_scaling=self.reward_scaling,
-                        state_space=self.state_space,
-                        action_space=self.action_space,
-                        tech_indicator_list=self.tech_indicator_list,
-                        print_verbosity=self.print_verbosity,
                     )
                 ]
             )

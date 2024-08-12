@@ -10,7 +10,6 @@ from sklearn.base import TransformerMixin
 from sklearn.preprocessing import MaxAbsScaler
 from stockstats import StockDataFrame as Sdf
 
-
 from core.meta.preprocessor.yahoodownloader import YahooDownloader
 
 
@@ -124,14 +123,13 @@ class FeatureEngineer:
         main method to do the feature engineering
 
     """
-
     def __init__(
-        self,
-        use_technical_indicator=True,
-        tech_indicator_list=config.INDICATORS,
-        use_vix=False,
-        use_turbulence=False,
-        user_defined_feature=False,
+            self,
+            use_technical_indicator=True,
+            tech_indicator_list=None,
+            use_vix=False,
+            use_turbulence=False,
+            user_defined_feature=False,
     ):
         self.use_technical_indicator = use_technical_indicator
         self.tech_indicator_list = tech_indicator_list
@@ -300,11 +298,11 @@ class FeatureEngineer:
             hist_price = df_price_pivot[
                 (df_price_pivot.index < unique_date[i])
                 & (df_price_pivot.index >= unique_date[i - 252])
-            ]
+                ]
             # Drop tickers which has number missing values more than the "oldest" ticker
             filtered_hist_price = hist_price.iloc[
-                hist_price.isna().sum().min() :
-            ].dropna(axis=1)
+                                  hist_price.isna().sum().min():
+                                  ].dropna(axis=1)
 
             cov_temp = filtered_hist_price.cov()
             current_temp = current_price[[x for x in filtered_hist_price]] - np.mean(
